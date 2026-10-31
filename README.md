@@ -53,6 +53,7 @@ wrangler pages deploy . --project-name mc-web
 | 线路 B | `mc.games.280627.xyz` |
 | Render | `minecraftonline-8dxw.onrender.com` |
 | EdgeOne | `mcjava.edgeone.dev` |
+| Vercel | `mcjs-weld.vercel.app` |
 
 首页底部有线路选择器，进入时会自动测一次延迟（请求各域名的 `favicon.svg`），
 颜色规则：≤400ms 绿、≤1000ms 黄、>1000ms 红、无响应显示“超时”。

@@ -190,6 +190,9 @@
     letter-spacing:0;text-transform:none;font-style:normal;
   }
   .line-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .line-list.dense{gap:6px}
+  .line-list.dense .line{padding:6px 9px;font-size:11.5px;gap:6px}
+  .line-list.dense .line .ping{min-width:34px;font-size:10.5px}
   .line .sfx{opacity:.55}
   .line{
     display:inline-flex;align-items:center;gap:8px;cursor:pointer;
@@ -317,7 +320,8 @@
     { host: "minecraft.games.280627.xyz", label: "minecraft", suffix: ".games" },
     { host: "mc.games.280627.xyz", label: "mc", suffix: ".games" },
     { host: "minecraftonline-8dxw.onrender.com", label: "Render", short: "Render" },
-    { host: "mcjava.edgeone.dev", label: "EdgeOne", short: "EO" }
+    { host: "mcjava.edgeone.dev", label: "EdgeOne", short: "EO" },
+    { host: "mcjs-weld.vercel.app", label: "Vercel", short: "Vercel" }
   ];
   var LINE_KEY = "mc.line";
   var VER_KEY = "mc.lastVersion";
@@ -355,6 +359,7 @@
 
   function render() {
     list.innerHTML = "";
+    list.classList.toggle("dense", LINES.length >= 6);
     LINES.forEach(function (L) {
       var b = document.createElement("button");
       b.type = "button";
