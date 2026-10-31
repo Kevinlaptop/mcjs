@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>我的世界 · 网页版启动器</title>
+<meta name="description" content="浏览器里直接玩的 Minecraft，内置 1.8.8 与 1.12.2 两个版本，无需下载与安装。" />
+<meta name="theme-color" content="#07090a" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<style>
+  :root{
+    --bg:#07090a;
+    --bg-2:#0d1210;
+    --ink:#edf1e9;
+    --muted:#8a978f;
+    --line:rgba(255,255,255,.09);
+    --grass:#7ac74f;
+    --grass-deep:#3f7a33;
+    --gold:#e9b949;
+    --card:rgba(255,255,255,.035);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100%;
+  }
+  /* 背景层 */
+  .bg{
+    position:fixed;inset:0;z-index:-2;
+    background:
+      radial-gradient(900px 520px at 50% -180px, rgba(122,199,79,.16), transparent 70%),
+      radial-gradient(700px 420px at 90% 110%, rgba(233,185,73,.07), transparent 70%),
+      linear-gradient(180deg,#07090a 0%,#080d0b 55%,#060807 100%);
+  }
+  .grid{
+    position:fixed;inset:-50%;z-index:-1;
+    background-image:
+      linear-gradient(to right,rgba(255,255,255,.045) 1px,transparent 1px),
+      linear-gradient(to bottom,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:64px 64px;
+    transform:perspective(600px) rotateX(58deg) scale(1.4);
+    transform-origin:50% 20%;
+    opacity:.5;
+    animation:drift 24s linear infinite;
+  }
+  @keyframes drift{ to{ background-position:0 64px,64px 0 } }
+  .vignette{
+    position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 40%,transparent 30%,rgba(0,0,0,.65) 100%);
+  }
+  .noise{
+    position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  main{
+    position:relative;z-index:1;
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:clamp(28px,6vh,64px) clamp(18px,4vw,40px);
+  }
+
+  /* 立方体 */
+  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+  .stage{width:112px;height:112px;perspective:520px;margin-bottom:26px}
+  .cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;animation:spin 18s linear infinite}
+  @keyframes spin{
+    from{transform:rotateX(-22deg) rotateY(-26deg)}
+    to{transform:rotateX(-22deg) rotateY(334deg)}
+  }
+  .face{position:absolute;inset:0;width:112px;height:112px;image-rendering:pixelated;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}
+  .f-top{background:linear-gradient(160deg,#8fd45f,#5aa93f 55%,#478a33)}
+  .f-bottom{background:linear-gradient(160deg,#8a6a4b,#5d4632)}
+  .f-front,.f-back,.f-left,.f-right{background:linear-gradient(180deg,#6fbb46 0 26%,#7c5c3f 26% 100%)}
+  .f-front{transform:rotateY(0deg) translateZ(56px)}
+  .f-back{transform:rotateY(180deg) translateZ(56px)}
+  .f-right{transform:rotateY(90deg) translateZ(56px);filter:brightness(.86)}
+  .f-left{transform:rotateY(-90deg) translateZ(56px);filter:brightness(.7)}
+  .f-top{transform:rotateX(90deg) translateZ(56px)}
+  .f-bottom{transform:rotateX(-90deg) translateZ(56px)}
+  .face::after{
+    content:"";position:absolute;inset:0;
+    background-image:
+      repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0 7px,transparent 7px 14px),
+      repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 7px,transparent 7px 14px);
+    mix-blend-mode:overlay;
+  }
+
+  .eyebrow{
+    font-size:11px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--grass);opacity:.85;margin-bottom:14px;
+  }
+  h1{
+    font-size:clamp(32px,6.2vw,54px);
+    font-weight:800;letter-spacing:-.02em;line-height:1.1;
+  }
+  h1 em{
+    font-style:normal;
+    background:linear-gradient(180deg,#b9e88f,#5aa93f);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{
+    margin-top:14px;color:var(--muted);font-size:15px;line-height:1.6;max-width:30em;text-wrap:balance;
+  }
+
+  /* 版本卡片 */
+  .versions{
+    width:100%;max-width:900px;
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;
+    margin-top:clamp(32px,5vh,52px);
+    animation:rise .7s .1s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+  .card{
+    position:relative;display:flex;flex-direction:column;
+    padding:24px 24px 20px;
+    border-radius:16px;
+    background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    text-decoration:none;color:inherit;
+    overflow:hidden;
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),border-color .28s,box-shadow .28s;
+  }
+  .card::before{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(420px 180px at 50% -30%,rgba(122,199,79,.16),transparent 70%);
+    opacity:0;transition:opacity .35s;
+  }
+  .card:hover,.card:focus-visible{
+    transform:translateY(-6px);
+    border-color:rgba(122,199,79,.42);
+    box-shadow:0 22px 48px -24px rgba(0,0,0,.9),0 0 0 1px rgba(122,199,79,.12);
+    outline:none;
+  }
+  .card:hover::before{opacity:1}
+  .card:active{transform:translateY(-2px)}
+
+  .card .head{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative}
+  .ver{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1;min-width:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:0 6px}
+  .ver small{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;white-space:nowrap}
+  .badge{
+    flex:0 0 auto;font-size:11px;padding:5px 9px;border-radius:999px;
+    border:1px solid rgba(122,199,79,.35);color:#a9e07d;background:rgba(122,199,79,.1);
+    white-space:nowrap;
+  }
+  .badge.gold{border-color:rgba(233,185,73,.35);color:var(--gold);background:rgba(233,185,73,.1)}
+  .desc{margin-top:10px;color:var(--muted);font-size:13.5px;line-height:1.65;position:relative}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;list-style:none;position:relative}
+  .tags li{
+    font-size:11.5px;color:#c4cfc6;padding:4px 8px;border-radius:6px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);
+  }
+  .go{
+    margin-top:20px;display:flex;align-items:center;gap:8px;
+    font-size:13.5px;font-weight:600;color:#a9e07d;position:relative;
+  }
+  .go svg{transition:transform .28s}
+  .card:hover .go svg{transform:translateX(4px)}
+
+  /* 底部 */
+  .foot{
+    margin-top:52px;
+    display:flex;flex-wrap:wrap;gap:10px 22px;justify-content:center;
+    font-size:12px;color:#6d7a72;line-height:1.7;text-align:center;
+    animation:rise .7s .2s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .foot span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--grass);opacity:.7}
+  .foot b{color:#9aa79f;font-weight:600}
+  .foot .mine{color:#8b9a91}
+
+  /* 线路选择 */
+  .lines{
+    margin-top:26px;display:flex;align-items:center;justify-content:center;
+    gap:10px;flex-wrap:wrap;
+  }
+  .lines-label{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#5f6c64;
+  }
+  .lines-label .info{
+    width:13px;height:13px;border-radius:50%;border:1px solid #3f4a43;color:#6d7a72;
+    font-size:9px;line-height:11px;text-align:center;cursor:help;
+    letter-spacing:0;text-transform:none;font-style:normal;
+  }
+  .line-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .line .sfx{opacity:.55}
+  .line{
+    display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    padding:7px 11px;border-radius:9px;font-family:inherit;font-size:12px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+    color:#b3bfb7;transition:border-color .2s,background .2s,color .2s,transform .2s;
+  }
+  .line:hover{border-color:rgba(255,255,255,.2);color:#e3ebe0}
+  .line:active{transform:scale(.98)}
+  .line[aria-pressed="true"]{
+    border-color:rgba(122,199,79,.55);background:rgba(122,199,79,.13);color:#d8f2c4;
+  }
+  .line .ping{
+    font-variant-numeric:tabular-nums;font-size:11px;color:#6f7c74;min-width:38px;text-align:right;
+  }
+  .line[data-state="fast"] .ping{color:#8fd45f}
+  .line[data-state="mid"]  .ping{color:#e9b949}
+  .line[data-state="slow"] .ping{color:#e07a5f}
+  .line[data-state="dead"] .ping{color:#7a5b55}
+  .retest{
+    font-family:inherit;font-size:11px;padding:7px 10px;border-radius:9px;cursor:pointer;
+    background:transparent;border:1px dashed rgba(255,255,255,.14);color:#7f8c84;
+    transition:border-color .2s,color .2s;
+  }
+  .retest:hover{border-color:rgba(122,199,79,.4);color:#a9e07d}
+  .retest[disabled]{opacity:.4;cursor:default}
+
+  @media (max-width:720px){
+    .versions{grid-template-columns:minmax(0,1fr);max-width:460px}
+    .stage{width:88px;height:88px;margin-bottom:20px}
+    .face{width:88px;height:88px}
+    .f-front{transform:rotateY(0deg) translateZ(44px)}
+    .f-back{transform:rotateY(180deg) translateZ(44px)}
+    .f-right{transform:rotateY(90deg) translateZ(44px)}
+    .f-left{transform:rotateY(-90deg) translateZ(44px)}
+    .f-top{transform:rotateX(90deg) translateZ(44px)}
+    .f-bottom{transform:rotateX(-90deg) translateZ(44px)}
+    .ver{font-size:28px}
+    .desc{font-size:13px}
+    .line{padding:6px 9px;font-size:11.5px;gap:6px}
+    .line .ping{min-width:32px;font-size:10.5px}
+    .line .sfx{display:none}
+    .lines{gap:8px}
+    .lines-label{font-size:9.5px}
+  }
+  @media (max-height:720px){
+    main{justify-content:flex-start}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001s!important;transition-duration:.001s!important}
+  }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="grid"></div>
+<div class="vignette"></div>
+<div class="noise"></div>
+
+<main>
+  <header class="hero">
+    <div class="stage" aria-hidden="true">
+      <div class="cube">
+        <div class="face f-front"></div>
+        <div class="face f-back"></div>
+        <div class="face f-left"></div>
+        <div class="face f-right"></div>
+        <div class="face f-top"></div>
+        <div class="face f-bottom"></div>
+      </div>
+    </div>
+    <h1>我的世界 <em>网页版</em></h1>
+    <p class="sub">无需下载安装，打开浏览器就能进入世界。</p>
+  </header>
+
+  <section class="versions">
+    <a class="card" href="./1.8.8/" data-ver="1.8.8">
+      <div class="head">
+        <div class="ver">1.8.8</div>
+        <span class="badge">推荐 · 最稳</span>
+      </div>
+      <p class="desc">PVP 黄金版本。战斗手感扎实，红石与指令完整，可连的社区服务器最多。</p>
+      <ul class="tags">
+        <li>约 29 MB</li><li>内置中文</li><li>触屏可用</li><li>支持联机</li>
+      </ul>
+      <span class="go">进入游戏
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </span>
+    </a>
+
+    <a class="card" href="./1.12.2/" data-ver="1.12.2">
+      <div class="head">
+        <div class="ver">1.12.2</div>
+        <span class="badge gold">新内容</span>
+      </div>
+      <p class="desc">方块与生物更丰富，带陶瓦、林地府邸、鹦鹉等后续版本特性，适合探索与建筑。</p>
+      <ul class="tags">
+        <li>约 24 MB</li><li>新维度内容</li><li>触屏可用</li><li>支持联机</li>
+      </ul>
+      <span class="go">进入游戏
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </span>
+    </a>
+  </section>
+
+  <div class="lines">
+    <span class="lines-label">线路 <i class="info" title="不同线路的存档互相独立，不会同步">?</i></span>
+    <div class="line-list" id="lineList"></div>
+    <button class="retest" id="retest" type="button">测速</button>
+  </div>
+
+  <footer class="foot">
+    <span>首次加载约 10–30 秒</span>
+    <span>存档保存在本地浏览器</span>
+    <span class="mine">由 KevinLaptop 制作</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var LINES = [
+    { host: "mc-web-57e.pages.dev", label: "官方直连", short: "官方" },
+    { host: "minecraft.games.280627.xyz", label: "minecraft", suffix: ".games" },
+    { host: "mc.games.280627.xyz", label: "mc", suffix: ".games" }
+  ];
+  var LINE_KEY = "mc.line";
+  var VER_KEY = "mc.lastVersion";
+  var here = location.host;
+  var selected = null, manual = false, ping = {}, pending = 0;
+
+  if (!LINES.some(function (l) { return l.host === here; }) && here) {
+    LINES.unshift({ host: here, label: "当前" });
+  }
+
+  try { selected = localStorage.getItem(LINE_KEY); } catch (e) {}
+  if (!selected || !LINES.some(function (l) { return l.host === selected; })) {
+    selected = here || LINES[0].host;
+    manual = false;
+  } else {
+    manual = true;
+  }
+
+  var list = document.getElementById("lineList");
+  var retestBtn = document.getElementById("retest");
+
+  function stateOf(ms) {
+    if (ms === undefined) return "wait";
+    if (ms === null) return "dead";
+    if (ms <= 400) return "fast";
+    if (ms <= 1000) return "mid";
+    return "slow";
+  }
+
+  function labelOf(ms) {
+    if (ms === undefined) return "…";
+    if (ms === null) return "超时";
+    return ms + "ms";
+  }
+
+  function render() {
+    list.innerHTML = "";
+    LINES.forEach(function (L) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "line";
+      b.title = L.host;
+      b.setAttribute("aria-pressed", L.host === selected ? "true" : "false");
+      b.setAttribute("data-state", stateOf(ping[L.host]));
+
+      var name = document.createElement("span");
+      name.textContent = L.label;
+      if (L.suffix) {
+        var sx = document.createElement("span");
+        sx.className = "sfx";
+        sx.textContent = L.suffix;
+        name.appendChild(sx);
+      }
+      var ms = document.createElement("span");
+      ms.className = "ping";
+      ms.textContent = labelOf(ping[L.host]);
+      b.appendChild(name);
+      b.appendChild(ms);
+
+      b.addEventListener("click", function () {
+        selected = L.host;
+        manual = true;
+        try { localStorage.setItem(LINE_KEY, selected); } catch (e2) {}
+        render();
+      });
+      list.appendChild(b);
+    });
+  }
+
+  function probe(host) {
+    return new Promise(function (resolve) {
+      var t0 = performance.now(), done = false;
+      var img = new Image();
+      function finish(ok) {
+        if (done) return;
+        done = true;
+        img.onload = img.onerror = null;
+        resolve(ok ? Math.round(performance.now() - t0) : null);
+      }
+      img.onload = function () { finish(true); };
+      img.onerror = function () { finish(false); };
+      setTimeout(function () { finish(false); }, 5000);
+      img.src = "https://" + host + "/favicon.svg?_=" + Date.now() + Math.random().toString(36).slice(2, 7);
+    });
+  }
+
+  function pickBest() {
+    if (manual) return;
+    var cur = ping[here];
+    if (cur !== null && cur !== undefined) return;
+    var best = null, bestMs = Infinity;
+    LINES.forEach(function (L) {
+      var v = ping[L.host];
+      if (v !== null && v !== undefined && v < bestMs) { bestMs = v; best = L.host; }
+    });
+    if (best) selected = best;
+  }
+
+  function runTest() {
+    pending = LINES.length;
+    ping = {};
+    render();
+    retestBtn.disabled = true;
+    LINES.forEach(function (L) {
+      probe(L.host).then(function (ms) {
+        ping[L.host] = ms;
+        pending--;
+        if (pending === 0) {
+          pickBest();
+          retestBtn.disabled = false;
+        }
+        render();
+      });
+    });
+  }
+
+  retestBtn.addEventListener("click", runTest);
+
+  var last = null;
+  try { last = localStorage.getItem(VER_KEY); } catch (e) {}
+
+  Array.prototype.forEach.call(document.querySelectorAll(".card"), function (a) {
+    a.addEventListener("click", function (e) {
+      var ver = a.getAttribute("data-ver");
+      try { localStorage.setItem(VER_KEY, ver); } catch (e2) {}
+      last = ver;
+      if (selected && selected !== here) {
+        e.preventDefault();
+        location.href = "https://" + selected + "/" + ver + "/";
+      }
+    });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && last && document.activeElement === document.body) {
+      location.href = (selected && selected !== here ? "https://" + selected : "") + "/" + last + "/";
+    }
+  });
+
+  render();
+  setTimeout(runTest, 700);
+})();
+</script>
+</body>
+</html>

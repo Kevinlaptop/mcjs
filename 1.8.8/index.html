@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="width:100%;height:100%;background-color:black;">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<meta name="description" content="在浏览器里玩 Minecraft 1.8.8" />
+		<meta name="theme-color" content="#000000" />
+		<title>我的世界 1.8.8 · 网页版</title>
+		<link type="image/png" rel="shortcut icon" href="favicon.png" />
+		<style>
+			#mc-back{position:fixed;left:12px;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;
+				padding:6px 10px;border-radius:8px;font:500 12px/1 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+				color:#dfe7dc;text-decoration:none;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.14);
+				backdrop-filter:blur(6px);opacity:.42;transition:opacity .2s,background .2s;-webkit-tap-highlight-color:transparent}
+			#mc-back:hover{opacity:1;background:rgba(0,0,0,.7)}
+			#mc-boot{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+				background:#0a0d0b;color:#cfd8cc;font:500 14px/1.6 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+				transition:opacity .45s ease}
+			#mc-boot.hide{opacity:0;pointer-events:none}
+			#mc-boot .cube{width:34px;height:34px;background:linear-gradient(180deg,#7ac74f 0 30%,#7c5c3f 30% 100%);
+				border-radius:3px;box-shadow:0 8px 24px -8px rgba(122,199,79,.6);animation:bob 1.2s ease-in-out infinite}
+			@keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-7px) rotate(3deg)}}
+			#mc-boot .hint{color:#7f8c80;font-size:12px;letter-spacing:.02em}
+		</style>
+		<script type="text/javascript" defer src="classes.js"></script>
+	</head>
+	<body style="margin:0px;width:100%;height:100%;overflow:hidden;background-color:black;" id="game_frame">
+		<a id="mc-back" href="../">← 版本选择</a>
+		<div id="mc-boot">
+			<div class="cube"></div>
+			<div>正在加载 1.8.8 客户端…</div>
+			<div class="hint">首次进入约 29 MB，之后走浏览器缓存</div>
+		</div>
+		<script type="text/javascript">
+			"use strict";
+			(function() {
+				var boot = document.getElementById("mc-boot");
+				var done = false;
+				function hideBoot() {
+					if (done) return;
+					done = true;
+					if (boot && boot.parentNode) { boot.classList.add("hide"); setTimeout(function(){ boot.remove(); }, 500); }
+				}
+				var mo = new MutationObserver(function() {
+					if (document.querySelector("#game_frame canvas")) hideBoot();
+				});
+				mo.observe(document.body, { childList: true, subtree: true });
+				setTimeout(function() {
+					if (document.querySelector("canvas")) hideBoot();
+					mo.disconnect();
+				}, 25000);
+
+				window.addEventListener("load", function() {
+					if (window.location.href.indexOf("file:") === 0) {
+						alert("请通过 HTTP 访问，不要直接双击打开本地文件。");
+						hideBoot();
+						return;
+					}
+					var relayId = Math.floor(Math.random() * 3);
+					window.eaglercraftXOpts = {
+						demoMode: false,
+						container: "game_frame",
+						assetsURI: "assets.epk",
+						localesURI: "lang/",
+						worldsDB: "worlds",
+						servers: [],
+						relays: [
+							{ addr: "wss://relay.deev.is/", comment: "lax1dude relay #1", primary: relayId == 0 },
+							{ addr: "wss://relay.lax1dude.net/", comment: "lax1dude relay #2", primary: relayId == 1 },
+							{ addr: "wss://relay.shhnowisnottheti.me/", comment: "ayunami relay #1", primary: relayId == 2 }
+						]
+					};
+					var q = window.location.search;
+					if (q && q[0] === "?" && typeof window.URLSearchParams !== "undefined") {
+						q = new window.URLSearchParams(q);
+						if (q.get("server")) window.eaglercraftXOpts.joinServer = q.get("server");
+					}
+					try { main(); } catch (e) { hideBoot(); throw e; }
+				});
+			})();
+		</script>
+	</body>
+</html>

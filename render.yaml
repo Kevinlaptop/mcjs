@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: mc-web
+    runtime: static
+    plan: free
+    staticPublishPath: .
+    buildCommand: ""
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: no-referrer
+      - path: /1.8.8/assets.epk
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /1.8.8/classes.js
+        name: Cache-Control
+        value: public, max-age=86400
+      - path: /1.8.8/lang/*
+        name: Cache-Control
+        value: public, max-age=604800
