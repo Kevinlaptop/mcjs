@@ -82,6 +82,20 @@ Cloudflare Pages 绑定自定义域后，若账号的 API 令牌没有 DNS 编�
 
 加完后回到 Pages → 项目 → Custom domains，状态会从 `pending` 变为 `active`（证书签发约 1–5 分钟）。
 
+## 部署方式四：Render（作为非 Cloudflare 线路）
+
+仓库根目录带 `render.yaml`，Render 会自动识别为静态站点。
+
+1. Render Dashboard → **New** → **Static Site** → 连接本 GitHub 仓库
+2. 若没自动读到 `render.yaml`，手动填：**Build Command 留空**、**Publish Directory 填 `.`**
+3. 部署完拿到 `https://<name>.onrender.com`，把它加进 `index.html` 的 `LINES` 数组即成为一条线路
+
+注意事项：
+- Render 静态站点**单文件没有 25 MiB 限制**，所以 1.12.2 那个 23.9 MiB 的单文件版能直接跑
+- 免费套餐每月 100 GB 带宽，按每次游玩约 30 MB 估算 ≈ 3300 次首访（之后走浏览器缓存就不计了）
+- 静态站点不会休眠，不需要保活
+- 改了内容 push 到默认分支会自动重新部署
+
 ## 注意事项
 
 | 项目 | 说明 |
